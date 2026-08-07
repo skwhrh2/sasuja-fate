@@ -36,6 +36,7 @@ const trigrams = [
 export default function ReportPage() {
   const [coachingData, setCoachingData] = useState<CoachingData | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isDivinationUnlocked, setIsDivinationUnlocked] = useState(false); // 점괘 전용 결제 상태
   const [activeTab, setActiveTab] = useState<"report" | "qa" | "feedback">("report");
 
   // 1:1 Q&A (주역 1:1 맞춤 비책) State
