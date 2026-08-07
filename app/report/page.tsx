@@ -234,9 +234,14 @@ export default function ReportPage() {
             data.user.sajuName === currentReportName && 
             data.user.birthDate === currentReportBirthDate;
  
-          // 평생 소장 로직 제거를 위해 DB 기반 자동 해금 복원 비활성화 (매번 새로 결제 유도)
-          setIsUnlocked(false);
-          sessionStorage.removeItem("saju_report_unlocked");
+          // 평생 소장 로직 제거: DB 프로필 기반의 자동 해금 복원은 비활성화하되,
+          // 현재 브라우저 세션에서 결제를 완료해 둔 상태(sessionStorage의 saju_report_unlocked)는 유지합니다.
+          const isSessionUnlocked = sessionStorage.getItem("saju_report_unlocked") === "true";
+          if (isSessionUnlocked) {
+            setIsUnlocked(true);
+          } else {
+            setIsUnlocked(false);
+          }
         } else {
           setUser(null);
         }
