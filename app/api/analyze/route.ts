@@ -1,11 +1,74 @@
 import { NextResponse } from "next/server";
 import KoreanLunarCalendar from "korean-lunar-calendar";
 import { GoogleGenAI } from "@google/genai";
+import { getAuthenticatedUser, supabase } from "../../../lib/db";
 
 // ==========================================
-// [동적 백엔드 연산 엔진 시뮬레이터]
-// 100% Deterministic (결정론적) 매핑
+// [동적 백엔드 연산 엔진 시뮬레이터 - 만세력 간지 역법 연산 유틸]
 // ==========================================
+export function calculateSajuPillars(year: number, month: number, day: number, hour: number) {
+  const stems = ["갑(甲)", "을(乙)", "병(丙)", "정(丁)", "무(戊)", "기(己)", "경(庚)", "신(辛)", "임(壬)", "계(癸)"];
+  const branches = ["자(子)", "축(丑)", "인(寅)", "묘(卯)", "진(辰)", "사(巳)", "오(午)", "미(未)", "신(申)", "유(酉)", "술(戌)", "해(亥)"];
+
+  // 년/월/일 값 세이프가드 검증 (NaN 방지)
+  const safeYear = isNaN(year) || year < 1900 ? 1990 : year;
+  const safeMonth = isNaN(month) || month < 1 || month > 12 ? 1 : month;
+  const safeDay = isNaN(day) || day < 1 || day > 31 ? 1 : day;
+  const safeHour = isNaN(hour) || hour < 0 || hour > 23 ? 12 : hour;
+
+  // 1. 연주 (Year Pillar)
+  let yearStemIdx = (safeYear - 4) % 10;
+  if (yearStemIdx < 0) yearStemIdx += 10;
+  let yearBranchIdx = (safeYear - 4) % 12;
+  if (yearBranchIdx < 0) yearBranchIdx += 12;
+  const yearPillar = (stems[yearStemIdx] || "갑(甲)") + (branches[yearBranchIdx] || "자(子)");
+
+  // 2. 일주 (Day Pillar)
+  const refDate = new Date(1900, 0, 1);
+  const targetDate = new Date(safeYear, safeMonth - 1, safeDay);
+  const diffTime = targetDate.getTime() - refDate.getTime();
+  let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  if (isNaN(diffDays)) diffDays = 0;
+
+  let dayStemIdx = diffDays % 10;
+  if (dayStemIdx < 0) dayStemIdx += 10;
+  let dayBranchIdx = (diffDays + 10) % 12;
+  if (dayBranchIdx < 0) dayBranchIdx += 12;
+  const dayPillar = (stems[dayStemIdx] || "갑(甲)") + (branches[dayBranchIdx] || "자(子)");
+
+  // 3. 월주 (Month Pillar)
+  let monthBranchIdx = (safeMonth + 1) % 12; 
+  let monthStemIdx = (yearStemIdx * 2 + safeMonth) % 10;
+  if (monthStemIdx < 0) monthStemIdx += 10;
+  const monthPillar = (stems[monthStemIdx] || "갑(甲)") + (branches[monthBranchIdx] || "자(子)");
+
+  // 4. 시주 (Hour Pillar)
+  let hourBranchIdx = 0;
+  if (safeHour >= 23 || safeHour < 1) hourBranchIdx = 0; 
+  else if (safeHour >= 1 && safeHour < 3) hourBranchIdx = 1; 
+  else if (safeHour >= 3 && safeHour < 5) hourBranchIdx = 2; 
+  else if (safeHour >= 5 && safeHour < 7) hourBranchIdx = 3; 
+  else if (safeHour >= 7 && safeHour < 9) hourBranchIdx = 4; 
+  else if (safeHour >= 9 && safeHour < 11) hourBranchIdx = 5; 
+  else if (safeHour >= 11 && safeHour < 13) hourBranchIdx = 6; 
+  else if (safeHour >= 13 && safeHour < 15) hourBranchIdx = 7; 
+  else if (safeHour >= 15 && safeHour < 17) hourBranchIdx = 8; 
+  else if (safeHour >= 17 && safeHour < 19) hourBranchIdx = 9; 
+  else if (safeHour >= 19 && safeHour < 21) hourBranchIdx = 10; 
+  else hourBranchIdx = 11; 
+
+  let hourStemIdx = (dayStemIdx * 2 + hourBranchIdx) % 10;
+  if (hourStemIdx < 0) hourStemIdx += 10;
+  const hourPillar = (stems[hourStemIdx] || "갑(甲)") + (branches[hourBranchIdx] || "자(子)");
+
+  return {
+    yearPillar,
+    monthPillar,
+    dayPillar,
+    hourPillar,
+    rawText: `연주: ${yearPillar}, 월주: ${monthPillar}, 일주: ${dayPillar}, 시주: ${hourPillar}`
+  };
+}
 
 // 1. 10천간 일간 정의 및 세부 해설 데이터
 const DAY_MASTERS = [
@@ -224,6 +287,13 @@ export async function POST(request: Request) {
 
     const convertedSolarDate = `${solarYear}-${String(solarMonth).padStart(2, "0")}-${String(solarDay).padStart(2, "0")}`;
 
+    // 만세력 역법 간지 계산 가동 (태어난 시간 파싱 및 디폴트 정렬)
+    let hourForPillars = 12;
+    if (birthTime && birthTime.includes(":")) {
+      hourForPillars = Number(birthTime.split(":")[0]);
+    }
+    const sajuPillars = calculateSajuPillars(solarYear, solarMonth, solarDay, hourForPillars);
+
     // 3. [백엔드 엔진의 실시간 동적 매핑 로직 작동]
     // 사용자의 생년월일시 데이터 값을 기반으로 완벽히 매칭 및 파생된 정밀 데이터 산출
     const baziSeed = (solarYear + solarMonth + solarDay) % 10;
@@ -267,6 +337,7 @@ export async function POST(request: Request) {
         isLunar: isLunar || "solar",
         convertedSolarDate,
         birthTime: birthTime || "시간 정보 비공개 (일 시드로 대체 분석)",
+        manseuryeok_pillars: sajuPillars.rawText,
       },
       bazi: externalBazi || {
         day_master: baziStemData.stem,
@@ -276,6 +347,12 @@ export async function POST(request: Request) {
         structure_desc: structData.desc,
         structure_details: structData.details,
         five_elements: { wood, fire, earth, metal, water },
+        pillars: {
+          year: sajuPillars.yearPillar,
+          month: sajuPillars.monthPillar,
+          day: sajuPillars.dayPillar,
+          hour: sajuPillars.hourPillar,
+        }
       },
       numerology: externalNumerology || {
         core_number: numData.num,
@@ -327,39 +404,52 @@ export async function POST(request: Request) {
 `;
     }
 
-    // 5. 통합 시스템 지침 (글자수 대폭 확장, 사주 정밀, 수리학, 자미두수, 비책 구체화)
+    // 5. 통합 시스템 지침 (학문별 독립성 강화 및 정통 학설 이론 주입)
     const systemRole = `
-You are an expert Oriental Life Coach specializing in Cross-Validating three ancient Asian wisdom traditions:
-1. BaZi (Four Pillars / 사주팔자)
-2. Eastern Numerology (수리학)
-3. Zi Wei Dou Shu (Purple Star Astrology / 자미두수)
+You are an expert Oriental Life Coach specializing in three ancient Asian wisdom traditions with absolute academic rigor:
 
-[OPERATIONAL CORE PRINCIPLES - EASY & FRIENDLY MANDATE]
-- NO HEAVY JARGON: Strictly do NOT write cold, academic, or difficult Hanja definitions. If you use a concept from the JSON (like a Day Master, Core Number, or celestial star), explain it immediately with a beautiful, everyday metaphor that an ordinary person can instantly feel and understand.
+[ACADEMIC SCHOOLS & THEORETICAL FRAMEWORK (정통 학설적 배경)]
+1. BaZi (사주명리):
+   - You must base your analysis on the traditional "Japyeong Myungri" (자평명리/子平命理) framework.
+   - Focus on analyzing the strength of the Day Master (일간/日干), determining the Structure/Grid (격국/格局), and identifying the Favorable Element (용신/用神) and Favorable Auxiliary (희신/喜神) based on the balance of the Five Elements. Include interpretations of the Ten Gods (십신/十神) and major Auxiliary Stars (신살/神殺) such as Cheonul Gwiin (천을귀인).
+2. Eastern Numerology (동양 수리학):
+   - You must base your analysis on the Neo-Confucian "81 Numerology" (81수리원격/八十一數理原格) of Song dynasty scholar Cai Shen (채침/蔡沈).
+   - Interpret the mathematical vibrations using the four lifecycle stages: Won-gyeok (원격/元格 - youth), Hyeong-gyeok (형격/亨格 - young adult), I-gyeok (이격/利格 - midlife), and Jeong-gyeok (정격/貞格 - late life) to reveal destiny patterns.
+3. Zi Wei Dou Shu (자미두수):
+   - You must base your analysis on the master text "Zi Wei Dou Shu Quanshu" (자미두수전서/紫微斗數全書) by Chen Xiyi (진희이/陳希夷).
+   - Trace destiny using the 12 Palaces (12궁) anchored by the Destiny Palace (명궁/命宮), evaluating the positions and brightness levels (묘왕평함/廟旺平陷) of the 14 Major Stars (14정성: 자미, 천부, 태양, 무곡 등) and the dynamic influence of the Four Transformational Catalysts (생년사화/四化: 화록, 화권, 화과, 화기).
+
+[OPERATIONAL CORE PRINCIPLES - STRICT ACADEMIC BOUNDARIES]
+- NO INTER-MIXING IN INDIVIDUAL SECTIONS (각 학문 영역의 완벽한 분리):
+  * "bazi_analysis" (사주 정밀 진단): You must ONLY analyze traditional Bazi (Four Pillars, Day Master, Five Elements percentage, Structure). Do NOT mention any Numerology numbers, vibrations, or Zi Wei stars here.
+  * "numerology_analysis" (수리학 상세 분석): You must ONLY analyze Eastern Numerology (core_number, vibration, meaning). Do NOT mention Bazi pillars, element percentages, or Zi Wei stars here.
+  * "ziwei_analysis" (자미두수 정밀 진단): You must ONLY analyze Zi Wei Dou Shu (main_stars, status, interpretation, palaces). Do NOT mention Bazi pillars, elements, or Numerology numbers here.
+  * "summary" (운명의 마스터키 / 총론) & "action_plans" (인생 비책): These are the ONLY sections where you are allowed to synthesize, cross-validate, and weave the three systems together into a unified life guidance narrative.
+
 - EMPATHETIC & PRACTICAL COUNSELING: Write like a warm, loving, and wise mentor who is sitting beside the user with a hot cup of tea. Address real-life concerns: how they handle stress, what kind of people they are comfortable around, when they should take a deep breath, and practical career actions.
-- 100% FACT-BASED: Relly strictly on the provided backend fact JSON.
+- NO HEAVY JARGON: Strictly do NOT write cold, academic, or difficult Hanja definitions. If you use a concept from the JSON (like a Day Master, Core Number, or celestial star), explain it immediately with a beautiful, everyday metaphor.
+- 100% FACT-BASED: Rely strictly on the provided backend fact JSON.
 
-[ULTRA-PREMIUM REPORT SPECIFICATIONS (글자수 제한 극대화)]
-To make this report feel like a high-end, extremely customized, lifetime-access consulting dossier (worth high financial investment), you MUST follow these length constraints strictly:
-1. "summary" (운명의 마스터키): Must be 950+ characters (in Korean/relevant locale). Do not summarize briefly. Draft a breathtaking, warm, and highly comforting letter that beautifully weaves their elements, numbers, and stars into a single, cohesive life narrative.
-2. "bazi_analysis" (사주 정밀 진단): Must be 800+ characters. Thoroughly decode their Day Master (using its friendly natural analog) and structure. Explain how their specific Five Elements percentage shapes their everyday feelings, communication habits, and inner motivations in a very easy-to-read style.
-3. "numerology_analysis" (수리학 상세 분석): Must be 650+ characters. Interpret the gentle life rhythm behind their core_number and vibration. Give them comforting validation about their path.
-4. "ziwei_analysis" (자미두수 정밀 진단): Must be 800+ characters. Explain their main_stars and key_palaces in a friendly way (e.g. 'the palace of you', 'the palace of wealth and career'). Show them how to harness these traits to shine in their current work or life stage.
-5. "action_plans" (인생 비책 4단계): Output EXACTLY 4 highly specific, actionable, and warm coaching action plans. Each block must be 280+ characters of thorough, detailed guidance written like a comforting letter. No bulleted lists inside the strings.
+[ULTRA-PREMIUM REPORT SPECIFICATIONS (글자수 제한 및 학문별 서술 규정)]
+1. "summary" (운명의 마스터키 - 총론): Must be 1200+ characters (in Korean/relevant locale). Draft a breathtaking, warm, and highly comforting letter that beautifully weaves their Bazi elements, Numerology numbers, and Zi Wei stars into a single, cohesive, unified life narrative.
+2. "bazi_analysis" (사주 정밀 진단): Must be 1000+ characters. Focus strictly on decoding their Day Master (using its friendly natural analog) and structure. Reference the sexagenary pillars (연주, 월주, 일주, 시주 간지 부호) explicitly. Do NOT contain any numbers or star names.
+3. "numerology_analysis" (수리학 상세 분석): Must be 800+ characters. Interpret the gentle life rhythm behind their core_number and vibration. Do NOT contain Bazi terms or Zi Wei star names.
+4. "ziwei_analysis" (자미두수 정밀 진단): Must be 1000+ characters. Explain their main_stars and key_palaces (명궁, 재백궁, 관록궁) in a friendly way. Do NOT contain Bazi terms or Numerology numbers.
+5. "action_plans" (인생 비책 4단계): Output EXACTLY 4 highly specific coaching action plans. Each block must be 350+ characters of thorough, detailed guidance. You may gently synthesize elements here.
 
 [GLOBAL LOCALIZATION & TONE]
 Active Locale/Language Requested: "${locale}"
 ${toneInstruction}
 
 [OUTPUT SCHEMA REQUIREMENT]
-You MUST respond with a single JSON object matching this schema EXACTLY. Ensure the JSON is well-formed, valid, and fully escapable.
+You MUST respond with a single JSON object matching this schema EXACTLY. Ensure the JSON is well-formed and valid.
 {
   "score": <number: alignment/confidence percentage, e.g., ${confidenceScore}>,
   "summary": "<string: 1200+ characters, warm, cozy, and majestic narrative-driven master-key synthesis of the three systems.>",
   "bazi_preview": "<string: A highly comforting, warm 2-3 sentence teaser hook for the BaZi preview. No brainstorming list.>",
-  "bazi_analysis": "<string: 1000+ characters, incredibly detailed, easy-to-understand, empathetic breakdown of their inner nature and elements.>",
-  "numerology_analysis": "<string: 800+ characters, comforting and friendly psychological analysis of their success number vibration.>",
-  "ziwei_analysis": "<string: 1000+ characters, warm and accessible astrological analysis of their Purple Star stars and life palaces.>",
+  "bazi_analysis": "<string: 1000+ characters, BaZi ONLY. Empathic breakdown of pillars, elements, day master. No numbers/stars.>",
+  "numerology_analysis": "<string: 800+ characters, Numerology ONLY. Comforting psychological analysis of success number vibration. No Saju/stars.>",
+  "ziwei_analysis": "<string: 1000+ characters, Zi Wei Dou Shu ONLY. Astrological analysis of stars and palaces. No Saju/numbers.>",
   "action_plans": [
     "<string: 350+ characters, detailed friendly Action Plan 1 (e.g. Mindset & Stress Management)>",
     "<string: 350+ characters, detailed friendly Action Plan 2 (e.g. Work & Career Style)>",
@@ -441,6 +531,34 @@ Read the provided Fact Data closely. Weave these facts into an incredibly warm, 
 
     const totalLatency = (performance.now() - startTime).toFixed(2);
     console.log(`=== [API SUCCESS] /api/analyze completed successfully in ${totalLatency}ms ===`);
+
+    // 로그인한 유저 정보 확인 및 Supabase 실시간 백업 기재 (try-catch 안전 격리 및 에러 우회 방어막 적용)
+    try {
+      const user = await getAuthenticatedUser(request);
+      if (user) {
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            saju_name: name || "사용자",
+            birth_date: birthDate,
+            birth_time: birthTime || "",
+            is_lunar: isLunar || "solar",
+            saju_data: {
+              data: backendFactJson,
+              ai_coaching: aiCoachingResult
+            }
+          })
+          .eq("id", user.id);
+
+        if (updateError) {
+          console.warn("[WARN] Failed to auto-save Saju data to user database profile (likely missing table columns):", updateError.message);
+        } else {
+          console.log(`[DEBUG] Successfully auto-saved Saju data to user database profile for User ID: ${user.id}`);
+        }
+      }
+    } catch (dbErr: any) {
+      console.error("[ERROR] DB auto-save crashed but bypassed to prevent user diagnostics halt:", dbErr.message);
+    }
 
     return NextResponse.json({
       success: true,
