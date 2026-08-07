@@ -483,25 +483,14 @@ Read the provided Fact Data closely. Weave these facts into an incredibly warm, 
         },
       });
     } catch (apiErr: any) {
-      console.warn("[WARN] Primary model (gemini-2.0-flash) failed. Trying gemini-2.0-pro-exp as a bypass fallback...", apiErr.message);
-      try {
-        response = await ai.models.generateContent({
-          model: "gemini-2.0-pro-exp",
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-          },
-        });
-      } catch (innerErr: any) {
-        console.warn("[WARN] gemini-2.0-pro-exp failed. Falling back to gemini-2.0-flash-lite...", innerErr.message);
-        response = await ai.models.generateContent({
-          model: "gemini-2.0-flash-lite",
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-          },
-        });
-      }
+      console.warn("[WARN] Primary model (gemini-2.0-flash) failed. Falling back to gemini-2.0-flash-lite...", apiErr.message);
+      response = await ai.models.generateContent({
+        model: "gemini-2.0-flash-lite",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        },
+      });
     }
     const geminiApiEnd = performance.now();
     const latency = (geminiApiEnd - geminiApiStart).toFixed(2);
