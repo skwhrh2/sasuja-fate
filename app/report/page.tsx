@@ -275,7 +275,8 @@ export default function ReportPage() {
 
             {/* Premium Content (Locked/Unlocked) */}
             <div className="relative">
-              <div className={`flex flex-col gap-5 ${!isUnlocked ? "blur-[10px] pointer-events-none select-none" : ""}`}>
+              {/* 콘텐츠가 잠겨있을 때의 스타일: 가시성 숨김 + 상호작용 차단 */}
+              <div className={`flex flex-col gap-5 ${!isUnlocked ? "opacity-0 blur-[20px] h-[300px] overflow-hidden pointer-events-none select-none" : "opacity-100 transition-all duration-500"}`}>
                 <h2 className="text-xl font-bold text-amber-400 pl-1">✨ 운명의 비밀 (평생 소장 심화 분석)</h2>
                 
                 {/* 1. 3대 동양 철학 통합 총론 */}
@@ -316,9 +317,9 @@ export default function ReportPage() {
               </div>
 
               {!isUnlocked && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/85 rounded-3xl p-8 text-center border border-amber-500/20 shadow-2xl">
-                  <h3 className="text-xl font-bold text-white mb-2">3대 동양 철학이 융합된 인생 설계지도</h3>
-                  <p className="text-sm text-slate-400 max-w-sm mb-6 leading-relaxed">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 rounded-[2rem] p-8 text-center border border-amber-500/30 shadow-2xl z-10">
+                  <h3 className="text-2xl font-bold text-white mb-4">3대 동양 철학이 융합된 인생 설계지도</h3>
+                  <p className="text-sm text-slate-300 max-w-sm mb-8 leading-relaxed">
                     복잡한 군더더기를 모두 빼고 오직 핵심 정수만 엄선한 프리미엄 분석 리포트가 잠겨 있습니다.
                   </p>
                   <button 
