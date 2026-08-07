@@ -473,13 +473,25 @@ Read the provided Fact Data closely. Weave these facts into an incredibly warm, 
     console.log("[DEBUG] Sending Request to Gemini API (Model: gemini-3.1-flash-lite)...");
 
     const geminiApiStart = performance.now();
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-lite",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        },
+      });
+    } catch (apiErr: any) {
+      console.warn("[WARN] Primary model (gemini-2.5-flash) failed. Falling back to gemini-1.5-flash...", apiErr.message);
+      response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        },
+      });
+    }
     const geminiApiEnd = performance.now();
     const latency = (geminiApiEnd - geminiApiStart).toFixed(2);
     console.log(`[DEBUG] Gemini API Response received. Latency: ${latency}ms`);
