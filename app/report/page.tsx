@@ -87,15 +87,17 @@ export default function ReportPage() {
   const priceReport = isKo ? "9,800원" : "$6.99";
   const priceQA = isKo ? "1,300" : "$1.00";
 
+  // 평생 소장 로직 제거를 위해 useEffect에서 결제 정보 캐싱 제거
   useEffect(() => {
     const cachedData = sessionStorage.getItem("saju_report_data");
-    const unlockedStatus = sessionStorage.getItem("saju_report_unlocked");
     if (cachedData) {
       try {
         const parsed = JSON.parse(cachedData);
         if (parsed.success && parsed.ai_coaching) {
           setCoachingData(parsed.ai_coaching);
-          setIsUnlocked(unlockedStatus === "true");
+          // 결제 상태는 캐싱하지 않음: 매번 결제하도록 함
+          setIsUnlocked(false); 
+          setIsDivinationUnlocked(false);
         }
       } catch (err) {
         console.error("[ERROR] Failed to parse cached report data:", err);
@@ -104,9 +106,21 @@ export default function ReportPage() {
   }, []);
 
   const handlePayment = () => {
-    alert(`${priceReport} 결제가 완료되었습니다! 3중 크로스 검증된 프리미엄 운명의 비밀이 전격 해제됩니다.`);
+    // 실제 결제 API 호출 로직으로 교체될 부분
+    alert(`${priceReport} 결제가 확인되었습니다. 이번 진단 결과를 리포트로 확인하세요.`);
     setIsUnlocked(true);
-    sessionStorage.setItem("saju_report_unlocked", "true");
+  };
+
+  // 결과 다운로드 함수
+  const downloadReport = () => {
+    if (!coachingData) return;
+    const content = `사수자패트 운명 리포트\n\n총론: ${coachingData.summary}\n\n사주 진단: ${coachingData.bazi_analysis}\n\n수리학: ${coachingData.numerology_analysis}\n\n자미두수: ${coachingData.ziwei_analysis}\n\n인생 비책: ${coachingData.action_plans.join("\n")}`;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "운명리포트.txt";
+    a.click();
   };
 
   const handleAskQuestion = async () => {
