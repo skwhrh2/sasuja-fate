@@ -369,27 +369,37 @@ export default function ReportPage() {
                   우주의 기운이 당신의 질문과 가장 조화로운 답을 찾아 괘를 구성하고 있습니다. 잠시만 기다려 주세요.
                 </p>
               </div>
+            ) : !isDivinationUnlocked ? (
+              <div className="bg-slate-900 border border-amber-500/25 rounded-[2rem] p-10 shadow-2xl flex flex-col items-center text-center gap-4">
+                <h2 className="text-xl font-bold text-amber-200">💎 주역 점괘로 비책 보기</h2>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  궁금한 고민을 물어보고, 당신만의 주역 괘를 받아보세요. 15초간의 신비로운 괘 회전과 함께 족집게 코칭을 드립니다.
+                </p>
+                <button 
+                  onClick={handleDivinationPayment}
+                  className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-full transition-all cursor-pointer"
+                >
+                  {priceQA} 결제하고 점괘 시작하기
+                </button>
+              </div>
             ) : (
               <div className="bg-slate-900 border border-amber-500/25 rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4">
-                <h2 className="text-lg font-bold text-amber-200">💎 1:1 맞춤형 인생 비책 문의하기</h2>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  인생의 사업 기로, 면접, 연애, 인간관계 등 지금 가장 막히는 고민을 물어보세요. 세팅된 귀하의 사수자패트 에너지를 참고하여 단 1,300원({priceQA})에 족집게 비책을 드립니다.
-                </p>
+                <h2 className="text-lg font-bold text-amber-200">🔮 괘를 흔들어보세요!</h2>
                 
                 <textarea 
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   rows={4}
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm focus:outline-none focus:border-amber-500 text-slate-200 leading-relaxed" 
-                  placeholder="예시: 올해 새로운 스타트업 창업을 준비 중인데, 저의 수리 파동인 기획 에너지를 발산하기에 언제가 가장 좋을까요?" 
+                  placeholder="지금 가장 고민되는 질문을 입력하세요." 
                 />
                 
                 <button 
                   onClick={handleAskQuestion}
                   disabled={loadingQA}
-                  className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-full transition-all disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-full transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {loadingQA ? "인공지능 비책 해독 중..." : `1비책 문의하기 (${priceQA})`}
+                  주역 괘 흔들기 (점괘 보기)
                 </button>
 
                 {answer && (
