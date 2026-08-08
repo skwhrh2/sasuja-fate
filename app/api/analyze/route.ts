@@ -476,16 +476,16 @@ Read the provided Fact Data closely. Weave these facts into an incredibly warm, 
     let response;
     try {
       response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-3.1-flash-lite",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
         },
       });
     } catch (apiErr: any) {
-      console.warn("[WARN] Primary model (gemini-2.0-flash) failed. Falling back to gemini-2.0-flash-lite...", apiErr.message);
+      console.warn("[WARN] Primary model (gemini-3.1-flash-lite) failed. Falling back to gemini-3.1-flash...", apiErr.message);
       response = await ai.models.generateContent({
-        model: "gemini-2.0-flash-lite",
+        model: "gemini-3.1-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
