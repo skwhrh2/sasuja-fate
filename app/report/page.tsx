@@ -589,7 +589,7 @@ export default function ReportPage() {
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            💎 {lang === "ko" ? "1:1 비책 문의" : lang === "en" ? "1:1 Q&A Consult" : lang === "ja" ? "1:1 相談" : lang === "zh" ? "1:1 咨询" : "Hỏi Đáp 1:1"}
+            ☯️ {lang === "ko" ? "주역점 1:1 비책" : lang === "en" ? "I Ching 1:1 Oracle" : lang === "ja" ? "易経 1:1 秘策" : lang === "zh" ? "易经1:1秘策" : "Kinh Dịch 1:1"}
           </button>
           <button
             onClick={() => setActiveTab("feedback")}
