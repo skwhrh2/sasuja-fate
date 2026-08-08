@@ -270,7 +270,7 @@ export default function ReportPage() {
 
       // 결제창 호출 인자 구성
       const orderId = `ORD-${Date.now()}-${user.id.substring(0, 5)}`;
-      const orderName = "종합 운명 리포트 (평생 소장 분석)";
+      const orderName = "종합 운명 리포트 (심화 정밀 분석)";
       
       // 언어에 따라 결제 방식 분기 (글로벌 카드는 FOREIGN_CARD 결제수단 호출)
       const isKo = lang === "ko";
@@ -614,7 +614,7 @@ export default function ReportPage() {
                   <span className="text-xl animate-pulse">🔑</span>
                   <div className="flex flex-col">
                     <span className="text-xs sm:text-sm font-bold text-amber-200">
-                      {lang === "ko" ? "평생 분석 리포트 즉시 해금" : "Unlock Full Premium Report"}
+                      {lang === "ko" ? "심화 분석 리포트 즉시 해금" : "Unlock Full Premium Report"}
                     </span>
                     <span className="text-[10px] text-slate-400">
                       {t.priceText} / {t.pointsRequired} ({lang === "ko" ? "보유" : "Own"}: {user?.points?.toLocaleString() || 0}P)
@@ -661,7 +661,7 @@ export default function ReportPage() {
               >
                 <div className="flex justify-between items-center pl-1 pr-1">
                   <h2 className="text-xl font-bold text-amber-400">
-                    ✨ {lang === "ko" ? "운명의 비밀 (평생 소장 심화 분석)" : lang === "en" ? "Secrets of Destiny (Premium Analysis)" : lang === "ja" ? "運命의 真実 (精密鑑定書)" : lang === "zh" ? "命运的秘密 (终身精密分析)" : "Bí Mật Vận Mệnh (Phân Tích Chi Tiết)"}
+                    ✨ {lang === "ko" ? "운명의 비밀 (심화 정밀 분석)" : lang === "en" ? "Secrets of Destiny (Premium Analysis)" : lang === "ja" ? "運命の真実 (精密鑑定書)" : lang === "zh" ? "命运的秘密 (精密分析)" : "Bí Mật Vận Mệnh (Phân Tích Chi Tiết)"}
                   </h2>
                   {isUnlocked && (
                     <button 
