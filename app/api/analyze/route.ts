@@ -6,56 +6,104 @@ import { getAuthenticatedUser, supabase } from "../../../lib/db";
 // ==========================================
 // [동적 백엔드 연산 엔진 시뮬레이터 - 만세력 간지 역법 연산 유틸]
 // ==========================================
+
+// ─────────────────────────────────────────
+// [만세력 역법 엔진 - 24절기(태양황경) 기반 정밀 계산]
+// ─────────────────────────────────────────
+
+/** 줄리안 적일(Julian Day Number) 계산 */
+function toJulianDay(year: number, month: number, day: number): number {
+  let Y = year, M = month;
+  if (M <= 2) { Y--; M += 12; }
+  const A = Math.floor(Y / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + day + B - 1524.5;
+}
+
+/**
+ * 근사 태양 황경(°) 계산 - Jean Meeus "Astronomical Algorithms" 방식
+ * 정밀도: ±0.01° (절기 날짜 오차 약 ±1일 이내로 실용상 충분)
+ */
+function approxSolarLongitude(jd: number): number {
+  const T = (jd - 2451545.0) / 36525; // J2000.0 기준 율리우스 세기
+  const L = 280.46646 + 36000.76983 * T;
+  const M = ((357.52911 + 35999.05029 * T) % 360) * (Math.PI / 180);
+  const C = (1.914602 - 0.004817 * T) * Math.sin(M)
+          + 0.019993 * Math.sin(2 * M)
+          + 0.000289 * Math.sin(3 * M);
+  return ((L + C) % 360 + 360) % 360;
+}
+
+/**
+ * 절기 기반 사주 월건 인덱스 반환
+ * 0=寅(입춘~)  1=卯(경칩~)  2=辰(청명~)  3=巳(입하~)
+ * 4=午(망종~)  5=未(소서~)  6=申(입추~)  7=酉(백로~)
+ * 8=戌(한로~)  9=亥(입동~) 10=子(대설~) 11=丑(소한~)
+ */
+function getSajuMonthIdx(year: number, month: number, day: number): number {
+  const jd = toJulianDay(year, month, day);
+  const lon = approxSolarLongitude(jd);
+  // 입춘(立春) = 태양 황경 315° 기준, 이후 30° 간격으로 월 전환
+  return Math.floor(((lon - 315 + 360) % 360) / 30);
+}
+
 export function calculateSajuPillars(year: number, month: number, day: number, hour: number) {
-  const stems = ["갑(甲)", "을(乙)", "병(丙)", "정(丁)", "무(戊)", "기(己)", "경(庚)", "신(辛)", "임(壬)", "계(癸)"];
+  const stems   = ["갑(甲)", "을(乙)", "병(丙)", "정(丁)", "무(戊)", "기(己)", "경(庚)", "신(辛)", "임(壬)", "계(癸)"];
   const branches = ["자(子)", "축(丑)", "인(寅)", "묘(卯)", "진(辰)", "사(巳)", "오(午)", "미(未)", "신(申)", "유(酉)", "술(戌)", "해(亥)"];
 
-  // 년/월/일 값 세이프가드 검증 (NaN 방지)
-  const safeYear = isNaN(year) || year < 1900 ? 1990 : year;
+  // 입력값 안전 처리
+  const safeYear  = isNaN(year)  || year  < 1900 ? 1990 : year;
   const safeMonth = isNaN(month) || month < 1 || month > 12 ? 1 : month;
-  const safeDay = isNaN(day) || day < 1 || day > 31 ? 1 : day;
-  const safeHour = isNaN(hour) || hour < 0 || hour > 23 ? 12 : hour;
+  const safeDay   = isNaN(day)   || day   < 1 || day   > 31 ? 1 : day;
+  const safeHour  = isNaN(hour)  || hour  < 0 || hour  > 23 ? 12 : hour;
 
-  // 1. 연주 (Year Pillar)
-  let yearStemIdx = (safeYear - 4) % 10;
+  // ── 절기 기반 월건 인덱스 계산 ──
+  const sajuMonthIdx = getSajuMonthIdx(safeYear, safeMonth, safeDay);
+
+  // ── 연주 보정: 입춘(寅月) 이전(丑月=11)이면 사주 연도는 전년도 ──
+  // 예) 1990년 2월 3일(입춘 이전) → 사주 연도는 1989년(己巳)
+  const sajuYear = sajuMonthIdx === 11 ? safeYear - 1 : safeYear;
+
+  // 1. 연주 (Year Pillar) — 입춘 기준 연도 적용
+  let yearStemIdx = (sajuYear - 4) % 10;
   if (yearStemIdx < 0) yearStemIdx += 10;
-  let yearBranchIdx = (safeYear - 4) % 12;
+  let yearBranchIdx = (sajuYear - 4) % 12;
   if (yearBranchIdx < 0) yearBranchIdx += 12;
   const yearPillar = (stems[yearStemIdx] || "갑(甲)") + (branches[yearBranchIdx] || "자(子)");
 
-  // 2. 일주 (Day Pillar)
-  const refDate = new Date(1900, 0, 1);
+  // 2. 일주 (Day Pillar) — 1900.01.01(甲戌일) 기준 경과 일수
+  const refDate    = new Date(1900, 0, 1);
   const targetDate = new Date(safeYear, safeMonth - 1, safeDay);
-  const diffTime = targetDate.getTime() - refDate.getTime();
-  let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  let diffDays = Math.floor((targetDate.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24));
   if (isNaN(diffDays)) diffDays = 0;
-
   let dayStemIdx = diffDays % 10;
   if (dayStemIdx < 0) dayStemIdx += 10;
   let dayBranchIdx = (diffDays + 10) % 12;
   if (dayBranchIdx < 0) dayBranchIdx += 12;
   const dayPillar = (stems[dayStemIdx] || "갑(甲)") + (branches[dayBranchIdx] || "자(子)");
 
-  // 3. 월주 (Month Pillar)
-  let monthBranchIdx = (safeMonth + 1) % 12; 
-  let monthStemIdx = (yearStemIdx * 2 + safeMonth) % 10;
-  if (monthStemIdx < 0) monthStemIdx += 10;
+  // 3. 월주 (Month Pillar) — 24절기 기반 정밀 계산
+  // 월간 기준표: 甲己년=丙寅, 乙庚년=戊寅, 丙辛년=庚寅, 丁壬년=壬寅, 戊癸년=甲寅
+  const monthStemBase = ((yearStemIdx % 5) * 2 + 2) % 10;
+  const monthStemIdx  = (monthStemBase + sajuMonthIdx) % 10;
+  // 월지: 寅(idx=0)→branch[2], 卯(1)→[3], ..., 子(10)→[0], 丑(11)→[1]
+  const monthBranchIdx = (sajuMonthIdx + 2) % 12;
   const monthPillar = (stems[monthStemIdx] || "갑(甲)") + (branches[monthBranchIdx] || "자(子)");
 
-  // 4. 시주 (Hour Pillar)
+  // 4. 시주 (Hour Pillar) — 12지시 기준
   let hourBranchIdx = 0;
-  if (safeHour >= 23 || safeHour < 1) hourBranchIdx = 0; 
-  else if (safeHour >= 1 && safeHour < 3) hourBranchIdx = 1; 
-  else if (safeHour >= 3 && safeHour < 5) hourBranchIdx = 2; 
-  else if (safeHour >= 5 && safeHour < 7) hourBranchIdx = 3; 
-  else if (safeHour >= 7 && safeHour < 9) hourBranchIdx = 4; 
-  else if (safeHour >= 9 && safeHour < 11) hourBranchIdx = 5; 
-  else if (safeHour >= 11 && safeHour < 13) hourBranchIdx = 6; 
-  else if (safeHour >= 13 && safeHour < 15) hourBranchIdx = 7; 
-  else if (safeHour >= 15 && safeHour < 17) hourBranchIdx = 8; 
-  else if (safeHour >= 17 && safeHour < 19) hourBranchIdx = 9; 
-  else if (safeHour >= 19 && safeHour < 21) hourBranchIdx = 10; 
-  else hourBranchIdx = 11; 
+  if      (safeHour >= 23 || safeHour < 1)  hourBranchIdx = 0;  // 자시(子時)
+  else if (safeHour < 3)  hourBranchIdx = 1;  // 축시(丑時)
+  else if (safeHour < 5)  hourBranchIdx = 2;  // 인시(寅時)
+  else if (safeHour < 7)  hourBranchIdx = 3;  // 묘시(卯時)
+  else if (safeHour < 9)  hourBranchIdx = 4;  // 진시(辰時)
+  else if (safeHour < 11) hourBranchIdx = 5;  // 사시(巳時)
+  else if (safeHour < 13) hourBranchIdx = 6;  // 오시(午時)
+  else if (safeHour < 15) hourBranchIdx = 7;  // 미시(未時)
+  else if (safeHour < 17) hourBranchIdx = 8;  // 신시(申時)
+  else if (safeHour < 19) hourBranchIdx = 9;  // 유시(酉時)
+  else if (safeHour < 21) hourBranchIdx = 10; // 술시(戌時)
+  else                    hourBranchIdx = 11; // 해시(亥時)
 
   let hourStemIdx = (dayStemIdx * 2 + hourBranchIdx) % 10;
   if (hourStemIdx < 0) hourStemIdx += 10;
@@ -69,6 +117,7 @@ export function calculateSajuPillars(year: number, month: number, day: number, h
     rawText: `연주: ${yearPillar}, 월주: ${monthPillar}, 일주: ${dayPillar}, 시주: ${hourPillar}`
   };
 }
+
 
 // 1. 10천간 일간 정의 및 세부 해설 데이터
 const DAY_MASTERS = [
