@@ -1,5 +1,11 @@
 import express from "express";
 import path from "path";
+import dotenv from "dotenv";
+
+// Load local environmental variables first
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config();
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { calculateFourPillars, calculateNumerology, calculateZiWei } from "./src/utils/sajuCalculator.ts";
