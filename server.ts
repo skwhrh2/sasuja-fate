@@ -4,6 +4,19 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { calculateFourPillars, calculateNumerology, calculateZiWei } from "./src/utils/sajuCalculator.ts";
 import { SajuInput } from "./src/types.ts";
+import { 
+  supabase, 
+  hashPassword, 
+  generateSalt, 
+  generateReferralCode, 
+  generateSessionToken, 
+  getAuthenticatedUser, 
+  isSupabaseConfigured, 
+  EXCHANGE_RATE, 
+  KR_WITHHOLDING_TAX, 
+  GLOBAL_WITHHOLDING_TAX 
+} from "./lib/db";
+import crypto from "crypto";
 
 const app = express();
 const PORT = 3000;
@@ -244,6 +257,722 @@ app.post("/api/feedback", (req, res) => {
   const { feedback, rating, email } = req.body;
   console.log(`[Feedback Received] Rating: ${rating}, Email: ${email}, Msg: ${feedback}`);
   res.json({ success: true, message: "피드백이 성공적으로 전달되었습니다." });
+});
+
+// ================================================================
+// 회원 인증 및 추천인, 결제 API 복구
+// ================================================================
+
+// 1. 회원가입 API
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    if (!isSupabaseConfigured()) {
+      return res.status(500).json({ success: false, error: "서버 데이터베이스 설정(Supabase Env)이 누락되었습니다." });
+    }
+
+    const { email, password, name, referredBy, locale = "ko" } = req.body;
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ success: false, error: "이메일, 비밀번호, 이름을 모두 입력해 주세요." });
+    }
+
+    const { data: existingUser, error: searchError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (searchError) throw searchError;
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: "이미 가입된 이메일 주소입니다." });
+    }
+
+    let validatedReferredBy: string | null = null;
+    if (referredBy) {
+      const { data: referrer } = await supabase
+        .from("users")
+        .select("referral_code")
+        .eq("referral_code", referredBy.trim().toUpperCase())
+        .maybeSingle();
+
+      if (referrer) {
+        validatedReferredBy = referrer.referral_code;
+      }
+    }
+
+    const salt = generateSalt();
+    const passwordHash = hashPassword(password, salt);
+
+    let referralCode = "";
+    let isUnique = false;
+    let attempts = 0;
+    while (!isUnique && attempts < 5) {
+      referralCode = generateReferralCode();
+      const { data: dupCode } = await supabase
+        .from("users")
+        .select("id")
+        .eq("referral_code", referralCode)
+        .maybeSingle();
+
+      if (!dupCode) isUnique = true;
+      attempts++;
+    }
+
+    const { data: newUser, error: insertError } = await supabase
+      .from("users")
+      .insert({
+        email: email.toLowerCase(),
+        password_hash: passwordHash,
+        salt,
+        name,
+        referral_code: referralCode,
+        referred_by: validatedReferredBy,
+        points: 0,
+        total_earned_points: 0,
+        locale: (locale === "ja" || locale === "en" || locale === "zh" || locale === "vi" ? locale : "ko"),
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    res.json({
+      success: true,
+      message: "회원가입이 완료되었습니다.",
+      user: {
+        email: newUser.email,
+        name: newUser.name,
+        referralCode: newUser.referral_code,
+      },
+    });
+  } catch (error: any) {
+    console.error("Register Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2. 로그인 API
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    if (!isSupabaseConfigured()) {
+      return res.status(500).json({ success: false, error: "서버 데이터베이스 설정이 누락되었습니다." });
+    }
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: "이메일과 비밀번호를 모두 입력해 주세요." });
+    }
+
+    const { data: user, error: searchError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (searchError) throw searchError;
+    if (!user) {
+      return res.status(401).json({ success: false, error: "가입되지 않은 이메일이거나 비밀번호가 일치하지 않습니다." });
+    }
+
+    const hashedInput = hashPassword(password, user.salt);
+    if (hashedInput !== user.password_hash) {
+      return res.status(401).json({ success: false, error: "가입되지 않은 이메일이거나 비밀번호가 일치하지 않습니다." });
+    }
+
+    const token = generateSessionToken();
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ session_token: token })
+      .eq("id", user.id);
+
+    if (updateError) throw updateError;
+
+    res.cookie("sasuja_session", token, { path: "/", httpOnly: true, sameSite: "lax", maxAge: 2592000000 });
+    res.json({
+      success: true,
+      message: "로그인에 성공했습니다.",
+      user: {
+        email: user.email,
+        name: user.name,
+        referralCode: user.referral_code,
+        points: user.points,
+        locale: user.locale,
+      },
+      token,
+    });
+  } catch (error: any) {
+    console.error("Login Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 3. 로그아웃 API
+app.post("/api/auth/logout", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (user) {
+      await supabase
+        .from("users")
+        .update({ session_token: null })
+        .eq("id", user.id);
+    }
+    res.clearCookie("sasuja_session", { path: "/" });
+    res.json({ success: true, message: "로그아웃 성공" });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4. 내 정보 API
+app.get("/api/auth/me", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        referralCode: user.referralCode,
+        referredBy: user.referredBy,
+        points: user.points,
+        totalEarnedPoints: user.totalEarnedPoints,
+        locale: user.locale,
+        sajuName: user.sajuName,
+        birthDate: user.birthDate,
+        birthTime: user.birthTime,
+        isLunar: user.isLunar,
+        sajuData: user.sajuData,
+        isUnlocked: user.isUnlocked,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 5. 카카오 간편로그인 콜백 API
+app.get("/api/auth/kakao/callback", async (req, res) => {
+  const code = req.query.code as string;
+  if (!code) {
+    console.error("[ERROR] 카카오 인가 코드가 누락되었습니다.");
+    return res.redirect("/login?code=NO_CODE");
+  }
+
+  try {
+    const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || "test_kakao_client_id_12345";
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${origin}/api/auth/kakao/callback`;
+
+    console.log(`[DEBUG] 카카오 토큰 요청 송신: redirectUri=${redirectUri}`);
+
+    const tokenResponse = await fetch("https://kauth.kakao.com/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+      },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        code,
+      }),
+    });
+
+    const tokenResult: any = await tokenResponse.json();
+    if (!tokenResponse.ok) {
+      console.error("[ERROR] 카카오 토큰 발급 실패:", tokenResult);
+      return res.redirect(`/report/fail?message=${encodeURIComponent("카카오 인증 토큰 발급에 실패했습니다.")}`);
+    }
+
+    const accessToken = tokenResult.access_token;
+    const userMeResponse = await fetch("https://kapi.kakao.com/v2/user/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+      },
+    });
+
+    const kakaoUser: any = await userMeResponse.json();
+    if (!userMeResponse.ok) {
+      console.error("[ERROR] 카카오 유저 정보 조회 실패:", kakaoUser);
+      return res.redirect(`/report/fail?message=${encodeURIComponent("카카오 유저 프로필 조회에 실패했습니다.")}`);
+    }
+
+    const kakaoId = kakaoUser.id;
+    const nickname = kakaoUser.properties?.nickname || `KakaoUser_${kakaoId}`;
+    const email = kakaoUser.kakao_account?.email || `kakao_${kakaoId}@sasuja.user`;
+
+    const { data: existingUser, error: searchError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (searchError) throw searchError;
+
+    let targetUser = existingUser;
+    const sessionToken = generateSessionToken();
+
+    if (!targetUser) {
+      console.log(`[DEBUG] 카카오 간편 가입 진행: email=${email}, name=${nickname}`);
+
+      let referredBy: string | null = null;
+      const cookieHeader = req.headers["cookie"];
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";").reduce((acc: any, c: any) => {
+          const [key, val] = c.trim().split("=");
+          if (key && val) acc[key] = decodeURIComponent(val);
+          return acc;
+        }, {} as Record<string, string>);
+        
+        const cookieRef = cookies["sasuja_ref"];
+        if (cookieRef) {
+          const { data: referrer } = await supabase
+            .from("users")
+            .select("referral_code")
+            .eq("referral_code", cookieRef.trim().toUpperCase())
+            .maybeSingle();
+            
+          if (referrer) {
+            referredBy = referrer.referral_code;
+          }
+        }
+      }
+
+      const randomPassword = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
+      const salt = generateSalt();
+      const passwordHash = hashPassword(randomPassword, salt);
+
+      let referralCode = "";
+      let isUnique = false;
+      let attempts = 0;
+      while (!isUnique && attempts < 5) {
+        referralCode = generateReferralCode();
+        const { data: dupCode } = await supabase
+          .from("users")
+          .select("id")
+          .eq("referral_code", referralCode)
+          .maybeSingle();
+
+        if (!dupCode) isUnique = true;
+        attempts++;
+      }
+
+      const { data: insertedUser, error: insertError } = await supabase
+        .from("users")
+        .insert({
+          email: email.toLowerCase(),
+          password_hash: passwordHash,
+          salt,
+          name: nickname,
+          referral_code: referralCode,
+          referred_by: referredBy,
+          points: 0,
+          total_earned_points: 0,
+          locale: "ko",
+          session_token: sessionToken,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      targetUser = insertedUser;
+    } else {
+      console.log(`[DEBUG] 카카오 간편 로그인 진행: email=${email}`);
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ session_token: sessionToken })
+        .eq("id", targetUser.id);
+
+      if (updateError) throw updateError;
+    }
+
+    res.cookie("sasuja_session", sessionToken, { path: "/", httpOnly: true, sameSite: "lax", maxAge: 2592000000 });
+    res.clearCookie("sasuja_ref", { path: "/" });
+    res.redirect("/report");
+  } catch (error: any) {
+    console.error("[ERROR] 카카오 OAuth 콜백 중 에러:", error);
+    res.redirect(`/report/fail?message=${encodeURIComponent(error.message || "카카오 간편 가입 실패")}`);
+  }
+});
+
+// 6. 추천인 통계 API
+app.get("/api/referral/stats", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "로그인이 필요한 서비스입니다." });
+    }
+
+    const { data: dbFriends, error: friendsError } = await supabase
+      .from("users")
+      .select("email, name, created_at")
+      .eq("referred_by", user.referralCode)
+      .order("created_at", { ascending: false });
+
+    if (friendsError) throw friendsError;
+
+    const friends = (dbFriends || []).map((u) => {
+      const maskedEmail = u.email.replace(/(.{3})(.*)(@.*)/, "$1***$3");
+      return {
+        email: maskedEmail,
+        name: u.name,
+        createdAt: u.created_at,
+      };
+    });
+
+    const { data: dbHistory, error: historyError } = await supabase
+      .from("point_histories")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (historyError) throw historyError;
+
+    const history = (dbHistory || []).map((h) => ({
+      id: h.id,
+      userId: h.user_id,
+      amount: h.amount,
+      type: h.type,
+      description: h.description,
+      createdAt: h.created_at,
+    }));
+
+    const { data: dbWithdrawals, error: withdrawalsError } = await supabase
+      .from("withdrawals")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (withdrawalsError) throw withdrawalsError;
+
+    const withdrawals = (dbWithdrawals || []).map((w) => ({
+      id: w.id,
+      userId: w.user_id,
+      amount: w.amount,
+      tax: w.tax,
+      netAmount: w.net_amount,
+      bankName: w.bank_name,
+      accountNumber: w.account_number,
+      accountHolder: w.account_holder,
+      status: w.status,
+      createdAt: w.created_at,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        friends,
+        history,
+        withdrawals,
+      },
+    });
+  } catch (error: any) {
+    console.error("Referral Stats Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 7. 포인트 출금 신청 API
+app.post("/api/referral/withdraw", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "로그인이 필요한 서비스입니다." });
+    }
+
+    const { amount, bankName, accountNumber, accountHolder } = req.body;
+    const requestedAmount = Number(amount);
+
+    if (!requestedAmount || !bankName || !accountNumber || !accountHolder) {
+      return res.status(400).json({ success: false, error: "모든 필드를 입력해 주세요." });
+    }
+
+    if (requestedAmount < 30000) {
+      return res.status(400).json({ success: false, error: "출금 신청은 최소 30,000P부터 가능합니다." });
+    }
+
+    if (user.points < requestedAmount) {
+      return res.status(400).json({ success: false, error: "보유하신 포인트가 신청 금액보다 부족합니다." });
+    }
+
+    const taxRate = user.locale === "ko" ? KR_WITHHOLDING_TAX : GLOBAL_WITHHOLDING_TAX;
+    const tax = Math.round(requestedAmount * taxRate);
+    const netAmount = requestedAmount - tax;
+
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ points: user.points - requestedAmount })
+      .eq("id", user.id);
+
+    if (updateError) throw updateError;
+
+    await supabase
+      .from("withdrawals")
+      .insert({
+        user_id: user.id,
+        amount: requestedAmount,
+        tax,
+        net_amount: netAmount,
+        bank_name: bankName,
+        account_number: accountNumber,
+        account_holder: accountHolder,
+        status: "pending",
+      });
+
+    await supabase.from("point_histories").insert({
+      user_id: user.id,
+      amount: -requestedAmount,
+      type: "withdrawal",
+      description: `현금 인출 신청 (실수령액: ${netAmount.toLocaleString()}원 상당, 세금 ${tax.toLocaleString()}원 공제)`,
+    });
+
+    res.json({
+      success: true,
+      message: "출금 신청이 정상 접수되었습니다.",
+      points: user.points - requestedAmount,
+    });
+  } catch (error: any) {
+    console.error("Withdraw Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 8. 결제 준비 / 시뮬레이션 API
+app.post("/api/payment", async (req, res) => {
+  try {
+    const { amount, currency = "KRW", orderId, orderName } = req.body;
+    console.log("[DEBUG] Sim payment:", { amount, currency, orderId, orderName });
+
+    const user = await getAuthenticatedUser(req);
+    let paymentAmountInKrw = amount;
+    if (currency === "USD") {
+      paymentAmountInKrw = amount * EXCHANGE_RATE;
+    } else if (currency === "JPY") {
+      paymentAmountInKrw = amount * (EXCHANGE_RATE / 100);
+    }
+
+    let referralRewarded = false;
+    let rewardPoints = 0;
+    let referrerName = "";
+
+    if (user && user.referredBy) {
+      const { data: referrer, error: referrerError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("referral_code", user.referredBy.toUpperCase())
+        .maybeSingle();
+
+      if (!referrerError && referrer) {
+        rewardPoints = Math.round(paymentAmountInKrw * 0.1);
+        referrerName = referrer.name;
+
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            points: referrer.points + rewardPoints,
+            total_earned_points: referrer.total_earned_points + rewardPoints,
+          })
+          .eq("id", referrer.id);
+
+        if (!updateError) {
+          const maskedEmail = user.email.replace(/(.{3})(.*)(@.*)/, "$1***$3");
+          await supabase.from("point_histories").insert({
+            user_id: referrer.id,
+            amount: rewardPoints,
+            type: "referral_reward",
+            description: `추천 친구(${user.name} / ${maskedEmail}) 결제 리워드 10% 적립`,
+          });
+          referralRewarded = true;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "결제가 성공적으로 처리되었습니다.",
+      data: {
+        amount,
+        currency,
+        referralRewarded,
+        rewardPoints,
+        referrerName,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 9. 결제 승인 API (토스페이먼츠 연동)
+app.post("/api/payment/confirm", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    const { paymentKey, orderId, amount, usedPoints = 0 } = req.body;
+    if (!paymentKey || !orderId || !amount) {
+      return res.status(400).json({ success: false, error: "결제 승인 인자가 누락되었습니다." });
+    }
+
+    const secretKey = process.env.TOSS_SECRET_KEY || "test_sk_Z5LzZgNxjWdpMw45KzLV3wGyd7Pv";
+    const basicAuthToken = Buffer.from(secretKey + ":").toString("base64");
+
+    const tossResponse = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basicAuthToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ paymentKey, orderId, amount }),
+    });
+
+    const tossResult: any = await tossResponse.json();
+    if (!tossResponse.ok) {
+      return res.status(tossResponse.status).json({ success: false, error: tossResult.message || "결제 승인 실패" });
+    }
+
+    const currency = tossResult.currency || "KRW";
+    let paymentAmountInKrw = Number(amount);
+    if (currency === "USD") {
+      paymentAmountInKrw = Number(amount) * EXCHANGE_RATE;
+    }
+
+    let referralRewarded = false;
+    let rewardPoints = 0;
+    let referrerName = "";
+
+    if (user.referredBy) {
+      const { data: referrer, error: referrerError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("referral_code", user.referredBy.toUpperCase())
+        .maybeSingle();
+
+      if (!referrerError && referrer) {
+        rewardPoints = Math.round(paymentAmountInKrw * 0.1);
+        referrerName = referrer.name;
+
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            points: referrer.points + rewardPoints,
+            total_earned_points: referrer.total_earned_points + rewardPoints,
+          })
+          .eq("id", referrer.id);
+
+        if (!updateError) {
+          await supabase.from("point_histories").insert({
+            user_id: referrer.id,
+            amount: rewardPoints,
+            type: "referral_reward",
+            description: `추천 가입 친구(${user.name}) 결제 완료 리워드 10% 지급`,
+          });
+          referralRewarded = true;
+        }
+      }
+    }
+
+    const isReportUnlock = orderId.startsWith("ORD-");
+    if (!isReportUnlock) {
+      await supabase
+        .from("users")
+        .update({ points: (user.points || 0) + 1500 })
+        .eq("id", user.id);
+
+      await supabase.from("point_histories").insert({
+        user_id: user.id,
+        amount: 1500,
+        type: "charge",
+        description: "1:1 비책 추가 질문용 1,500P 결제 충전 완료",
+      });
+    } else {
+      let pointsToSet = user.points || 0;
+      const pointsUsedNum = Number(usedPoints) || 0;
+      if (pointsUsedNum > 0) {
+        pointsToSet = Math.max(0, pointsToSet - pointsUsedNum);
+      }
+
+      await supabase
+        .from("users")
+        .update({ points: pointsToSet, is_unlocked: true })
+        .eq("id", user.id);
+
+      await supabase.from("point_histories").insert({
+        user_id: user.id,
+        amount: 0,
+        type: "saju_purchase_toss",
+        description: `종합 운명 리포트 현금 결제 완료 (승인 금액: ${amount}원)`,
+      });
+
+      if (pointsUsedNum > 0) {
+        await supabase.from("point_histories").insert({
+          user_id: user.id,
+          amount: -pointsUsedNum,
+          type: "saju_purchase_discount",
+          description: `종합 운명 리포트 결제 시 포인트 차감 사용: ${pointsUsedNum}P`,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "결제 승인 완료",
+      data: {
+        orderId: tossResult.orderId,
+        paymentKey: tossResult.paymentKey,
+        amount: tossResult.totalAmount,
+        currency,
+        referralRewarded,
+        rewardPoints,
+        referrerName,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 10. 포인트 구매/결제 API
+app.post("/api/payment/pay-with-points", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: "로그인이 필요한 서비스입니다." });
+    }
+
+    if (user.points < 9800) {
+      return res.status(400).json({ success: false, error: `포인트가 부족합니다. (필요: 9,800P, 보유: ${user.points}P)` });
+    }
+
+    await supabase
+      .from("users")
+      .update({ points: user.points - 9800, is_unlocked: true })
+      .eq("id", user.id);
+
+    await supabase.from("point_histories").insert({
+      user_id: user.id,
+      amount: -9800,
+      type: "saju_purchase",
+      description: "종합 운명 리포트 (평생 소장 분석) 포인트 결제 잠금 해제",
+    });
+
+    res.json({
+      success: true,
+      message: "포인트 결제가 정상적으로 처리되었습니다.",
+      points: user.points - 9800,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Serve frontend / Vite integration

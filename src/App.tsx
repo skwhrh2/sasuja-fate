@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { SajuInputForm } from './components/SajuInputForm';
 import { PaymentModal } from './components/PaymentModal';
 import { SajuReportView } from './components/SajuReportView';
 import { IChingConsultation } from './components/IChingConsultation';
 import { FeedbackModal } from './components/FeedbackModal';
+import LoginPage from './components/LoginPage';
+import MyPage from './components/MyPage';
+import ReferralTracker from './components/ReferralTracker';
 import { SajuInput, FourPillars, NumerologyAnalysis, ZiWeiAnalysis, SajuReportData } from './types';
-import { HelpCircle, FileText, Compass, Sparkles } from 'lucide-react';
+import { HelpCircle, FileText, Globe } from 'lucide-react';
 
-export default function App() {
+function MainPage() {
   // 메인 탭 상태: 기본값이 'iching' (주역 1:1 비책 메인 홈)
   const [activeMainTab, setActiveMainTab] = useState<'iching' | 'saju'>('iching');
 
@@ -102,8 +106,6 @@ export default function App() {
       <div>
         {/* Navigation Bar */}
         <Navbar
-          activeMainTab={activeMainTab}
-          setActiveMainTab={setActiveMainTab}
           onReset={handleReset}
           onOpenFeedback={() => setIsFeedbackOpen(true)}
           isUnlocked={isSajuUnlocked}
@@ -140,7 +142,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* TAB 1: Main Feature - 주역 1:1 비책 문의 (Default Active Tab / Home) */}
+          {/* TAB 1: Main Feature - 주역 1:1 비책 문의 */}
           {activeMainTab === 'iching' && (
             <div className="space-y-8 animate-fade-in">
               <IChingConsultation
@@ -151,7 +153,7 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 2: 3대 동양철학 종합 사주 리포트 (9,800원 건별 결제) */}
+          {/* TAB 2: 3대 동양철학 종합 사주 리포트 */}
           {activeMainTab === 'saju' && (
             <div className="space-y-8 animate-fade-in">
               {!isSajuUnlocked || !reportData ? (
@@ -204,5 +206,18 @@ export default function App() {
         onClose={() => setIsFeedbackOpen(false)}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <ReferralTracker />
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+      </Routes>
+    </Router>
   );
 }
