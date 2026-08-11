@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Locale, translations } from "../utils/locales";
 
@@ -123,7 +123,7 @@ export default function LoginPage() {
 
   const handleKakaoLogin = () => {
     // Kakao Client ID: support both Vite env and window configuration
-    const clientId = (import.meta.env.VITE_KAKAO_CLIENT_ID) || "test_kakao_client_id_12345";
+    const clientId = ((import.meta as any).env?.VITE_KAKAO_CLIENT_ID) || "test_kakao_client_id_12345";
     const redirectUri = `${window.location.origin}/api/auth/kakao/callback`;
     
     if (referredBy) {
