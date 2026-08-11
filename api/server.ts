@@ -8,8 +8,8 @@ dotenv.config();
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
-import { calculateFourPillars, calculateNumerology, calculateZiWei } from "./sajuCalculator";
-import { SajuInput } from "../src/types";
+import { calculateFourPillars, calculateNumerology, calculateZiWei } from "./sajuCalculator.js";
+import { SajuInput } from "../src/types.js";
 import { 
   supabase, 
   hashPassword, 
@@ -21,7 +21,7 @@ import {
   EXCHANGE_RATE, 
   KR_WITHHOLDING_TAX, 
   GLOBAL_WITHHOLDING_TAX 
-} from "./db";
+} from "./db.js";
 import crypto from "crypto";
 
 const app = express();

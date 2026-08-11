@@ -1,5 +1,5 @@
 import KoreanLunarCalendar from 'korean-lunar-calendar';
-import { SajuInput, FourPillars, Ganji, NumerologyAnalysis, ZiWeiAnalysis } from '../src/types';
+import { SajuInput, FourPillars, Ganji, NumerologyAnalysis, ZiWeiAnalysis } from '../src/types.js';
 
 const STEMS = [
   { kor: '갑', hanja: '甲', element: '木' },
