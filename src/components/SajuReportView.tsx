@@ -162,62 +162,77 @@ ${reportData.lifeStrategies.yearFortune}
       <div className="flex overflow-x-auto space-x-1 border-b border-amber-900/40 pb-px scrollbar-none">
         <button
           onClick={() => setActiveTab('master')}
-          className={`px-5 py-3 text-xs sm:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-2 ${
+          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
             activeTab === 'master'
               ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>통합 총론 (운명의 마스터키)</span>
+          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <span>
+            <span className="hidden md:inline">통합 총론 (운명의 마스터키)</span>
+            <span className="inline md:hidden">통합 총론</span>
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('saju')}
-          className={`px-5 py-3 text-xs sm:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-2 ${
+          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
             activeTab === 'saju'
               ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
-          <BookOpen className="w-4 h-4 text-amber-400" />
-          <span>사주학 (Four Pillars)</span>
+          <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <span>
+            <span className="hidden md:inline">사주학 (Four Pillars)</span>
+            <span className="inline md:hidden">사주학</span>
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('numerology')}
-          className={`px-5 py-3 text-xs sm:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-2 ${
+          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
             activeTab === 'numerology'
               ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
-          <PieChart className="w-4 h-4 text-amber-400" />
-          <span>동양 수리학 (Numerology)</span>
+          <PieChart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <span>
+            <span className="hidden md:inline">동양 수리학 (Numerology)</span>
+            <span className="inline md:hidden">수리학</span>
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('ziwei')}
-          className={`px-5 py-3 text-xs sm:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-2 ${
+          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
             activeTab === 'ziwei'
               ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
-          <Compass className="w-4 h-4 text-amber-400" />
-          <span>자미두수 (Zi Wei Dou Shu)</span>
+          <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <span>
+            <span className="hidden md:inline">자미두수 (Zi Wei Dou Shu)</span>
+            <span className="inline md:hidden">자미두수</span>
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('strategies')}
-          className={`px-5 py-3 text-xs sm:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-2 ${
+          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
             activeTab === 'strategies'
               ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
-          <Flame className="w-4 h-4 text-amber-400" />
-          <span>인생 비책 4단계</span>
+          <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <span>
+            <span className="hidden md:inline">인생 비책 4단계</span>
+            <span className="inline md:hidden">인생 비책</span>
+          </span>
         </button>
       </div>
 
