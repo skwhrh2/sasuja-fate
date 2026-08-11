@@ -8,8 +8,8 @@ dotenv.config();
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
-import { calculateFourPillars, calculateNumerology, calculateZiWei } from "../src/utils/sajuCalculator.ts";
-import { SajuInput } from "../src/types.ts";
+import { calculateFourPillars, calculateNumerology, calculateZiWei } from "../src/utils/sajuCalculator";
+import { SajuInput } from "../src/types";
 import { 
   supabase, 
   hashPassword, 
