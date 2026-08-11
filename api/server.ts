@@ -7,7 +7,6 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 dotenv.config();
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { createServer as createViteServer } from "vite";
 import { calculateFourPillars, calculateNumerology, calculateZiWei } from "./sajuCalculator.js";
 import { SajuInput } from "../src/types.js";
 import { 
@@ -984,6 +983,7 @@ app.post("/api/payment/pay-with-points", async (req, res) => {
 // Serve frontend / Vite integration
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
