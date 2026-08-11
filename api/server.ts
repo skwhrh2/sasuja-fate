@@ -67,7 +67,8 @@ app.post("/api/saju/analyze", async (req, res) => {
 
     const prompt = `
 당신은 대한민국 최고의 동양 철학 대가이자 '사수자패트(SasujaFate)'의 수석 운명 코치입니다.
-다음 사용자의 사주 팔자, 동양 수리학, 자미두수 데이터를 종합적으로 **크로스 검증(Cross-validation)**하여 명쾌하고 정밀한 인생 코칭 리포트를 작성하세요.
+사용자에게 깊은 감동과 신뢰감을 주기 위해, 아래 사주 팔자, 동양 수리학, 자미두수 데이터를 종합적으로 **크로스 검증(Cross-validation)**하여 대단히 풍부하고 정밀한 인생 코칭 리포트를 작성하세요.
+각 세부 항목의 분석 내용은 대강 적지 말고 **최소 8~10문장 이상(한글 공백 포함 450~600자 이상)**의 대단히 구체적적이고 깊이 있는 분량으로 풍성하게 상술해 주세요.
 
 [사용자 기본 정보]
 - 이름: ${input.name}
@@ -85,12 +86,12 @@ app.post("/api/saju/analyze", async (req, res) => {
 - 수리학 격국: ${numerology.primaryGrid} (수리수 ${numerology.birthNumber}, 이름 수리 ${numerology.nameLengthNumber})
 - 자미두수 명궁 주성: ${ziwei.lifeHouse}, 재백궁 주성: ${ziwei.wealthHouse}, 관록궁 주성: ${ziwei.careerHouse}
 
-다음 요구사항에 맞춰 JSON 형식으로 응답하세요:
-1. masterKeySummary: 사주, 수리학, 자미두수의 공통분모를 추출한 '운명의 마스터키' 핵심 종합 총론 (3~4문장, 품격있고 진중한 어조)
-2. sajuDetail: 사주 팔자 깊이 분석 (분석 내용, 강점 3가지, 보완점 2가지)
-3. numerologyDetail: 수리학 성격 및 수리 격국 분석 (분석 내용, 행운의 숫자 3개)
-4. ziWeiDetail: 자미두수 명반/주성 중심의 기운 분석
-5. lifeStrategies: 인생 비책 4단계 (재물운 비책, 애정/궁합 비책, 직업/건강 비책, 올해의 핵심 총운 비책)
+다음 요구사항에 맞춰 정확한 JSON 형식으로 응답하세요:
+1. masterKeySummary: 사주, 수리학, 자미두수의 공통분모를 정밀하게 추출해 낸 '운명의 마스터키' 핵심 종합 총론 (반드시 5문장 이상, 약 300자)
+2. sajuDetail: 사주 팔자 심층 분석. 성격과 오행의 과다/조화, 그리고 타고난 천성이 삶의 굴곡을 어떻게 돌파할 것인지에 대한 정밀 해석 (analysis 필드는 반드시 10문장 이상으로 장문 작성, 강점 3가지와 보완점 2가지도 각각 구체적인 조언으로 서술)
+3. numerologyDetail: 성명 격국 및 수리 분석. 이름과 탄생 파동수의 조화 및 행동 방식에서 수리적으로 기운을 보강하는 비법 (analysis 필드는 반드시 8문장 이상으로 상세 서술, 행운의 숫자 3개 포함)
+4. ziWeiDetail: 자미두수 명반/주성 중심의 평생 기운과 대인관계, 건강, 재물운의 흐름 분석 (analysis 필드는 8문장 이상으로 상세 서술, starPatterndesc 필드에는 길흉 구성을 요약 서술)
+5. lifeStrategies: 인생 비책 4단계. 사용자가 삶의 현장에서 바로 응용할 수 있도록 대단히 실천적이고 장문의 수칙을 담아 작성할 것. (각각의 wealth, relationship, careerAndHealth, yearFortune 필드는 반드시 10문장 이상, 한글 공백 포함 500자 이상씩 장문으로 구체적인 행동 팁을 제안)
 `;
 
     const response = await ai.models.generateContent({

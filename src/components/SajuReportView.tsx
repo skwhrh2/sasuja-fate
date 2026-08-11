@@ -310,15 +310,15 @@ ${reportData.lifeStrategies.yearFortune}
             </div>
           </div>
 
-          <div className="bg-slate-950 p-6 rounded-xl border border-amber-950">
-            <h4 className="text-sm font-bold text-amber-300 mb-2 font-serif">사주 정밀 해석</h4>
-            <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.sajuDetail.analysis}</p>
+          <div className="bg-slate-950 p-6 rounded-xl border border-amber-950 shadow-inner">
+            <h4 className="text-base font-bold text-amber-300 mb-3 font-serif">사주 정밀 해석</h4>
+            <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.sajuDetail.analysis}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-emerald-950/40 p-5 rounded-xl border border-emerald-900/40">
-              <h5 className="text-xs font-bold text-emerald-400 mb-2">타고난 운명의 핵심 강점</h5>
-              <ul className="space-y-1.5 text-xs text-emerald-200">
+              <h5 className="text-sm font-bold text-emerald-400 mb-2">타고난 운명의 핵심 강점</h5>
+              <ul className="space-y-2 text-sm sm:text-base text-emerald-200">
                 {reportData.sajuDetail.strengths.map((s, idx) => (
                   <li key={idx} className="flex items-start space-x-1.5">
                     <span className="text-emerald-400 font-bold">•</span>
@@ -329,8 +329,8 @@ ${reportData.lifeStrategies.yearFortune}
             </div>
 
             <div className="bg-amber-950/40 p-5 rounded-xl border border-amber-900/40">
-              <h5 className="text-xs font-bold text-amber-400 mb-2">보완해야 할 기운</h5>
-              <ul className="space-y-1.5 text-xs text-amber-200">
+              <h5 className="text-sm font-bold text-amber-400 mb-2">보완해야 할 기운</h5>
+              <ul className="space-y-2 text-sm sm:text-base text-amber-200">
                 {reportData.sajuDetail.weaknesses.map((w, idx) => (
                   <li key={idx} className="flex items-start space-x-1.5">
                     <span className="text-amber-400 font-bold">•</span>
@@ -365,12 +365,12 @@ ${reportData.lifeStrategies.yearFortune}
             </div>
           </div>
 
-          <div className="bg-slate-950 p-6 rounded-xl border border-amber-950">
-            <h4 className="text-sm font-bold text-amber-300 mb-2 font-serif">수리학 파동 풀이</h4>
-            <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.numerologyDetail.analysis}</p>
-            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center space-x-2 text-xs">
+          <div className="bg-slate-950 p-6 rounded-xl border border-amber-950 shadow-inner">
+            <h4 className="text-base font-bold text-amber-300 mb-3 font-serif">수리학 파동 풀이</h4>
+            <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.numerologyDetail.analysis}</p>
+            <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center space-x-3 text-sm">
               <span className="text-amber-400 font-semibold">행운의 수리 숫자:</span>
-              <span className="text-amber-200 font-bold bg-amber-950 px-2.5 py-1 rounded border border-amber-800/60">
+              <span className="text-amber-200 font-bold bg-amber-950 px-3 py-1.5 rounded border border-amber-800/60">
                 {reportData.numerologyDetail.luckyNumbers.join(', ')}
               </span>
             </div>
@@ -389,20 +389,20 @@ ${reportData.lifeStrategies.yearFortune}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {ziwei.houses.map((house, idx) => (
               <div key={idx} className="bg-slate-950 p-5 rounded-xl border border-amber-900/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-amber-200 font-serif">{house.name}</span>
-                  <span className="text-xs text-amber-400 bg-amber-950 px-2 py-0.5 rounded border border-amber-800">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-base font-bold text-amber-200 font-serif">{house.name}</span>
+                  <span className="text-xs sm:text-sm text-amber-400 bg-amber-950 px-2.5 py-1 rounded border border-amber-800">
                     주성: {house.stars.join(', ')}
                   </span>
                 </div>
-                <p className="text-xs text-amber-300/70">{house.description}</p>
+                <p className="text-sm sm:text-base text-amber-300/80 leading-relaxed">{house.description}</p>
               </div>
             ))}
           </div>
 
-          <div className="bg-slate-950 p-6 rounded-xl border border-amber-950">
-            <h4 className="text-sm font-bold text-amber-300 mb-2 font-serif">자미두수 총평 해석</h4>
-            <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.ziWeiDetail.analysis}</p>
+          <div className="bg-slate-950 p-6 rounded-xl border border-amber-950 shadow-inner">
+            <h4 className="text-base font-bold text-amber-300 mb-3 font-serif">자미두수 총평 해석</h4>
+            <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.ziWeiDetail.analysis}</p>
           </div>
         </div>
       )}
@@ -421,7 +421,7 @@ ${reportData.lifeStrategies.yearFortune}
                 <Award className="w-5 h-5" />
                 <h4 className="text-base font-bold font-serif text-amber-200">1. 재물운 비책</h4>
               </div>
-              <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.lifeStrategies.wealth}</p>
+              <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.lifeStrategies.wealth}</p>
             </div>
 
             <div className="bg-slate-950 p-6 rounded-2xl border border-amber-900/50">
@@ -429,7 +429,7 @@ ${reportData.lifeStrategies.yearFortune}
                 <Heart className="w-5 h-5" />
                 <h4 className="text-base font-bold font-serif text-amber-200">2. 애정 / 궁합 비책</h4>
               </div>
-              <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.lifeStrategies.relationship}</p>
+              <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.lifeStrategies.relationship}</p>
             </div>
 
             <div className="bg-slate-950 p-6 rounded-2xl border border-amber-900/50">
@@ -437,7 +437,7 @@ ${reportData.lifeStrategies.yearFortune}
                 <Briefcase className="w-5 h-5" />
                 <h4 className="text-base font-bold font-serif text-amber-200">3. 직업 / 건강 비책</h4>
               </div>
-              <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.lifeStrategies.careerAndHealth}</p>
+              <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.lifeStrategies.careerAndHealth}</p>
             </div>
 
             <div className="bg-slate-950 p-6 rounded-2xl border border-amber-900/50">
@@ -445,11 +445,20 @@ ${reportData.lifeStrategies.yearFortune}
                 <Calendar className="w-5 h-5" />
                 <h4 className="text-base font-bold font-serif text-amber-200">4. 올해의 핵심 총운</h4>
               </div>
-              <p className="text-sm text-amber-100/80 leading-relaxed font-sans">{reportData.lifeStrategies.yearFortune}</p>
+              <p className="text-base text-amber-100/90 leading-loose font-sans">{reportData.lifeStrategies.yearFortune}</p>
             </div>
           </div>
         </div>
       )}
+
+      {/* 텅 빈 하단부를 채우는 프리미엄 행운 수칙 마감 장식 */}
+      <div className="bg-gradient-to-r from-amber-950/30 via-slate-900 to-amber-950/30 p-6 rounded-2xl border border-amber-800/40 text-center space-y-2 mt-8">
+        <Sparkles className="w-5 h-5 text-amber-400 mx-auto animate-pulse" />
+        <h4 className="text-base font-bold font-serif text-amber-200">인생의 흐름을 지배하는 황금률</h4>
+        <p className="text-sm text-amber-300/80 max-w-xl mx-auto leading-relaxed">
+          "운명은 정해진 종착지가 아니라, 자신에게 유리한 바람을 타고 노를 젓는 여정입니다. 사주와 자미두수가 알려준 기운을 바탕으로 매 순간 긍정적인 파동을 끌어당기십시오."
+        </p>
+      </div>
     </div>
   );
 };
