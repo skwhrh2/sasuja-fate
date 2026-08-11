@@ -159,12 +159,12 @@ ${reportData.lifeStrategies.yearFortune}
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex overflow-x-auto space-x-1 border-b border-amber-900/40 pb-px scrollbar-none">
+      <div className="grid grid-cols-3 md:flex md:overflow-x-auto gap-1.5 md:space-x-1 border-b border-amber-900/40 pb-px">
         <button
           onClick={() => setActiveTab('master')}
-          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
+          className={`px-2 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-lg md:rounded-none md:rounded-t-xl transition-all border border-amber-950 md:border-t md:border-x md:border-b-transparent whitespace-nowrap flex items-center justify-center space-x-1 sm:space-x-2 ${
             activeTab === 'master'
-              ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
+              ? 'bg-slate-900 text-amber-300 border-amber-700/60 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
@@ -177,9 +177,9 @@ ${reportData.lifeStrategies.yearFortune}
 
         <button
           onClick={() => setActiveTab('saju')}
-          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
+          className={`px-2 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-lg md:rounded-none md:rounded-t-xl transition-all border border-amber-950 md:border-t md:border-x md:border-b-transparent whitespace-nowrap flex items-center justify-center space-x-1 sm:space-x-2 ${
             activeTab === 'saju'
-              ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
+              ? 'bg-slate-900 text-amber-300 border-amber-700/60 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
@@ -192,9 +192,9 @@ ${reportData.lifeStrategies.yearFortune}
 
         <button
           onClick={() => setActiveTab('numerology')}
-          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
+          className={`px-2 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-lg md:rounded-none md:rounded-t-xl transition-all border border-amber-950 md:border-t md:border-x md:border-b-transparent whitespace-nowrap flex items-center justify-center space-x-1 sm:space-x-2 ${
             activeTab === 'numerology'
-              ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
+              ? 'bg-slate-900 text-amber-300 border-amber-700/60 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
@@ -207,9 +207,9 @@ ${reportData.lifeStrategies.yearFortune}
 
         <button
           onClick={() => setActiveTab('ziwei')}
-          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
+          className={`px-2 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-lg md:rounded-none md:rounded-t-xl transition-all border border-amber-950 md:border-t md:border-x md:border-b-transparent whitespace-nowrap flex items-center justify-center space-x-1 sm:space-x-2 ${
             activeTab === 'ziwei'
-              ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
+              ? 'bg-slate-900 text-amber-300 border-amber-700/60 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
@@ -222,16 +222,16 @@ ${reportData.lifeStrategies.yearFortune}
 
         <button
           onClick={() => setActiveTab('strategies')}
-          className={`px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-t-xl transition-all border-t border-x whitespace-nowrap flex items-center space-x-1 sm:space-x-2 ${
+          className={`col-span-2 md:col-span-1 px-2 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-xs md:text-sm font-medium font-serif rounded-lg md:rounded-none md:rounded-t-xl transition-all border border-amber-950 md:border-t md:border-x md:border-b-transparent whitespace-nowrap flex items-center justify-center space-x-1 sm:space-x-2 ${
             activeTab === 'strategies'
-              ? 'bg-slate-900 text-amber-300 border-amber-700/60 border-b-slate-900 shadow-md'
+              ? 'bg-slate-900 text-amber-300 border-amber-700/60 shadow-md'
               : 'bg-slate-950/60 text-amber-400/60 border-transparent hover:text-amber-200'
           }`}
         >
           <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
           <span>
             <span className="hidden md:inline">인생 비책 4단계</span>
-            <span className="inline md:hidden">인생 비책</span>
+            <span className="inline md:hidden">인생 비책 (4단계)</span>
           </span>
         </button>
       </div>
