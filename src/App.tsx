@@ -13,8 +13,8 @@ import { SajuInput, FourPillars, NumerologyAnalysis, ZiWeiAnalysis, SajuReportDa
 import { HelpCircle, FileText, Globe } from 'lucide-react';
 
 function MainPage() {
-  // 메인 탭 상태: 기본값이 'iching' (주역 1:1 비책 메인 홈)
-  const [activeMainTab, setActiveMainTab] = useState<'iching' | 'saju'>('iching');
+  // 메인 탭 상태: 기본값이 'saju' (3대 철학 종합 운명 리포트)
+  const [activeMainTab, setActiveMainTab] = useState<'iching' | 'saju'>('saju');
 
   const [sajuInput, setSajuInput] = useState<SajuInput | null>(null);
   const [isSajuUnlocked, setIsSajuUnlocked] = useState<boolean>(false);

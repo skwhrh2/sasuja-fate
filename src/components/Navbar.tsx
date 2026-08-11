@@ -100,7 +100,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onReset, onOpenFeedback, isUnloc
       <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
         {/* Brand Logo & Tag */}
         <Link to="/" className="flex items-center space-x-2 sm:space-x-3 shrink-0 min-w-0">
-          <SasujaLogo size={36} className="sm:w-10 sm:h-10 shrink-0" />
+          <SasujaLogo size={36} className="w-9 h-9 sm:w-10 sm:h-10 shrink-0" />
           <div className="shrink-0 min-w-0">
             <div className="flex items-center space-x-1.5 sm:space-x-2">
               <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-amber-100 font-serif whitespace-nowrap shrink-0">

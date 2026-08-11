@@ -127,7 +127,7 @@ export const IChingConsultation: React.FC<IChingConsultationProps> = ({
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-2">
-            <SasujaLogo size={52} />
+            <SasujaLogo size={52} className="w-14 h-14 shrink-0" />
           </div>
           <div className="inline-flex items-center space-x-2 bg-amber-950/80 text-amber-300 border border-amber-800/60 px-3.5 py-1 rounded-full text-xs font-medium mb-3">
             <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
