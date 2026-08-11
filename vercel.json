@@ -2,6 +2,6 @@
   "version": 2,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/server" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api|assets|logo.png|favicon.ico|.*\\.png|.*\\.jpg|.*\\.js|.*\\.css).*)" , "destination": "/index.html" }
   ]
 }
