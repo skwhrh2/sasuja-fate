@@ -1,0 +1,6 @@
+{
+  "name": "사수자패트 (SasujaFate)",
+  "description": "3대 동양 철학(사주, 동양 수리학, 자미두수) 크로스 검증 정밀 운명 분석 & 주역 1:1 비책 서비스",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
